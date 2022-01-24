@@ -1,4 +1,4 @@
-#define TITLE_LENGTH 101
+#define TITLE_LENGTH 200
 #define ID_LENGTH 12
 
 typedef struct list {
