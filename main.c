@@ -34,7 +34,7 @@ void error(char *c)
 
 list *list_create(char title[], char id[])
 {
-    list *x = malloc(sizeof(list));
+    list *x = (list *)malloc(sizeof(list));
     sscanf(title, "%199[^\n]", x->name);
     sscanf(id, "%11s", x->id);
     x->next = NULL;
