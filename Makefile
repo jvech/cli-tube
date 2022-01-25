@@ -10,7 +10,7 @@ debug: main.c
 	valgrind --leak-check=full ./$(BIN) foo bar
 
 clean:
-	rm main *.o $(BIN) -v
+	rm $(BIN) -v
 
 install: build
 	cp $(BIN) /usr/bin/
