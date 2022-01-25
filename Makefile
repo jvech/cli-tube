@@ -9,8 +9,13 @@ debug: main.c
 	$(CC) -g main.c -o $(BIN) $(CFLAGS)
 	valgrind --leak-check=full ./$(BIN) foo bar
 
-test: test.c
-	$(CC) test.c -o test $(CFLAGS) -lcurl
-
 clean:
 	rm main *.o $(BIN) -v
+
+install: build
+	cp $(BIN) /usr/bin/
+	chmod 755 /usr/bin/$(BIN)
+
+uninstall: 
+	rm /usr/bin/$(BIN)
+

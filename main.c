@@ -1,3 +1,21 @@
+/*
+ * cli-tube, just a simple youtube viewer
+ * Copyright (C) 2021  vech
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -121,12 +139,13 @@ int main(int argc, char **argv)
     char query[TITLE_LENGTH];
 
     if (argc < 2) {
-        printf("You must provide at least 1 argument not %i\n", argc - 1);
+        fprintf(stderr, "You must provide at least 1 argument not %i\n", argc - 1);
+        fprintf(stderr, "Usage: cli-tube <query>...\n");
         exit(1);
     }
 
     argv_concat(query, argv, argc);
-    char curl_query[TITLE_LENGTH + 43] = {"https://www.youtube.com/results?search_query=algo"};
+    char curl_query[TITLE_LENGTH + 43] = {"https://www.youtube.com/results?search_query="};
     strcat(curl_query, query);
 
     int curl_main_pipe[2];
@@ -141,7 +160,7 @@ int main(int argc, char **argv)
     } else if (!curl_pid) {
         close(curl_main_pipe[0]);
         dup2(curl_main_pipe[1], 1);
-        if (execlp("curl", "curl", curl_query, NULL) == -1) {
+        if (execlp("curl", "curl", "--silent",curl_query, NULL) == -1) {
             error("Can't run curl command");
         }
     }
@@ -160,10 +179,14 @@ int main(int argc, char **argv)
     list *q;
     int i = 0, index_video;
     do {
+        printf(
+        " ====================================================================\n"
+        " |                      YOUTUBE RESULTS                             |\n"
+        " ====================================================================\n\n");
         for (q = videos->next, i = 1; q != NULL; q = q->next, i++) {
-            printf("%3d %s\n", i, q->name);
+            printf("%3d. %s\n", i, q->name);
         }
-        printf("Youtube results select one video i=%i: ", i);
+        printf("Select one video: ");
         scanf("%d", &index_video);
     } while (index_video >= i);
 
