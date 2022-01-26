@@ -1,6 +1,6 @@
 CC = cc
 CFLAGS=-std=c99 -pedantic-errors -Wall
-BIN=clitube
+BIN=cli-tube
 
 build: main.c
 	$(CC) $(CFLAGS) main.c -o $(BIN)
@@ -17,4 +17,4 @@ install: build
 	chmod 755 /usr/bin/$(BIN)
 
 uninstall: 
-	rm /usr/bin/$(BIN)
+	rm -v /usr/bin/$(BIN)
