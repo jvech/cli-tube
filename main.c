@@ -35,7 +35,7 @@ void error(char *c)
 list *list_create(char title[], char id[])
 {
     list *x = (list *)malloc(sizeof(list));
-    sscanf(title, "%199[^\n]", x->name);
+    sscanf(title, "%199[^\n]", x->title);
     sscanf(id, "%11s", x->id);
     x->next = NULL;
     return x;
@@ -71,7 +71,7 @@ void list_print_item(list *x, int i)
             }
         }
     }
-    printf("title: %s\n", p->name);
+    printf("title: %s\n", p->title);
     printf("id: %s\n\n", p->id);
 }
 
@@ -168,9 +168,18 @@ int main(int argc, char **argv)
     close(curl_main_pipe[1]);
 
     list *videos = parse_stream(stdin);
-    if (waitpid(curl_pid, NULL, 0) == -1) {
+
+    int curl_exit_status;
+    if (waitpid(curl_pid, &curl_exit_status, 0) == -1) {
         error("Can't wait curl process");
     }
+
+    if (WEXITSTATUS(curl_exit_status) < 0) {
+        fprintf(stderr, "curl exit error, exit status: %i", 
+                WEXITSTATUS(curl_exit_status));
+    }
+
+
     close(curl_main_pipe[0]);
     if (!freopen("/dev/tty", "r", stdin)) {
         error("/dev/tty");
@@ -186,7 +195,7 @@ int main(int argc, char **argv)
         " ====================================================================\n"
         );
         for (q = videos->next, i = 1; q != NULL; q = q->next, i++) {
-            printf("%3d. %s\n", i, q->name);
+            printf("%3d. %s\n", i, q->title);
         }
         printf("Select one video: ");
         fgets(index_video, 3, stdin);
@@ -198,8 +207,28 @@ int main(int argc, char **argv)
     sprintf(url_watch, "https://www.youtube.com/watch?v=%s", q->id);
     list_free(videos);
 
-    if (execlp("mpv", "mpv", url_watch, NULL) == -1) {
-        error("Can't run mpv");
+    pid_t mpv_pid = fork();
+    int mpv_exit_status;
+    switch (mpv_pid) {
+        case -1:
+            error("Can't fork mpv process");
+            break;
+        case 0:
+            printf("Loading %s\n", url_watch);
+            if (execlp("mpv", "mpv", url_watch, NULL) == -1) {
+                error("Can't run mpv");
+            }
+            break;
+        default:
+            if (waitpid(mpv_pid, &mpv_exit_status, 0) == -1) {
+                error("Can't wait mpv process");
+            }
+
+            if (WEXITSTATUS(mpv_exit_status) == -1) {
+                fprintf(stderr, "mpv exit error, exit status: %i", 
+                        WEXITSTATUS(mpv_exit_status));
+            }
+            break;
     }
     return 0;
 }

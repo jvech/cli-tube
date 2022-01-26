@@ -5,7 +5,7 @@
 
 typedef struct list {
     char id[ID_LENGTH];
-    char name[101];
+    char title[TITLE_LENGTH];
     struct list *next;
 } list;
 
