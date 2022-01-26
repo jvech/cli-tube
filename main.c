@@ -177,21 +177,23 @@ int main(int argc, char **argv)
     }
 
     list *q;
-    int i = 0, index_video;
+    int i = 0;
+    char index_video[3];
     do {
         printf(
         " ====================================================================\n"
         " |                      YOUTUBE RESULTS                             |\n"
-        " ====================================================================\n\n");
+        " ====================================================================\n"
+        );
         for (q = videos->next, i = 1; q != NULL; q = q->next, i++) {
             printf("%3d. %s\n", i, q->name);
         }
         printf("Select one video: ");
-        scanf("%d", &index_video);
-    } while (index_video >= i);
-
+        fgets(index_video, 3, stdin);
+        printf("\n\n");
+    } while (atoi(index_video) >= i || atoi(index_video) < 1);
     
-    q = list_get_node(videos, index_video);
+    q = list_get_node(videos, atoi(index_video));
     char url_watch[45];
     sprintf(url_watch, "https://www.youtube.com/watch?v=%s", q->id);
     list_free(videos);
