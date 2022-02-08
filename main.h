@@ -16,3 +16,5 @@ void list_append(list *list_first, char title[], char id[]);
 void list_print_item(list *x, int i);
 list *list_get_node(list *x, int index);
 list *parse_stream(FILE *file);
+int get_user_video(list *videos);
+void draw_options(list *videos, int video_index, int length);

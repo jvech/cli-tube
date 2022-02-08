@@ -16,6 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
+#include <ncurses.h>
+#include <locale.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -134,6 +136,69 @@ char *argv_concat(char *concat_char, char **argv, int argc)
     return concat_char;
 }
 
+void draw_options(list *videos, int video_index, int length)
+{
+    char *title;
+    int i, xmax, ymax;
+    getmaxyx(stdscr, ymax, xmax);
+    clear();
+    move(0, 0);
+    i = (video_index/ymax) * ymax;
+    for (i = (video_index/ymax) * ymax; i <= length && getcury(stdscr) < ymax - 1; i++) {
+        if (i == video_index) attron(A_REVERSE);
+        else attroff(A_REVERSE);
+        if (!i) continue;
+
+        printw("%2d. ", i);
+        title = list_get_node(videos, i)->title;
+        addnstr(title, xmax - 15);
+        if (strlen(title) > xmax - 15) addstr("...");
+        addch('\n');
+        attroff(A_REVERSE);
+    }
+    refresh();
+}
+
+int get_user_video(list *videos)
+{
+    list *q;
+    int length, key;
+    int video_index = 1;
+
+    for (q = videos->next, length = 0; q != NULL; q = q->next, length++);
+
+    setlocale(LC_ALL, "");
+    initscr();
+
+    noecho();
+    curs_set(0);
+    keypad(stdscr, TRUE);
+    draw_options(videos, video_index, length);
+    do {
+        key = getch();
+        switch (key) {
+            case KEY_UP:
+            case 'k':
+                video_index--;
+                break;
+            case KEY_DOWN:
+            case 'j':
+                video_index++;
+                break;
+            default:
+                break;
+        }
+        if (video_index > length) video_index = 1;
+        else if (video_index < 1) video_index = length;
+        draw_options(videos, video_index, length);
+    } while(key != '\n');
+
+    echo();
+    curs_set(1);
+    endwin();
+    return video_index;
+}
+
 int main(int argc, char **argv)
 {
     char query[TITLE_LENGTH];
@@ -186,49 +251,16 @@ int main(int argc, char **argv)
     }
 
     list *q;
-    int i = 0;
-    char index_video[3];
-    do {
-        printf(
-        " ====================================================================\n"
-        " |                      YOUTUBE RESULTS                             |\n"
-        " ====================================================================\n"
-        );
-        for (q = videos->next, i = 1; q != NULL; q = q->next, i++) {
-            printf("%3d. %s\n", i, q->title);
-        }
-        printf("Select one video: ");
-        fgets(index_video, 3, stdin);
-        printf("\n\n");
-    } while (atoi(index_video) >= i || atoi(index_video) < 1);
+    int index_video;
+    index_video = get_user_video(videos);
     
-    q = list_get_node(videos, atoi(index_video));
+    q = list_get_node(videos, index_video);
     char url_watch[45];
     sprintf(url_watch, "https://www.youtube.com/watch?v=%s", q->id);
     list_free(videos);
 
-    pid_t mpv_pid = fork();
-    int mpv_exit_status;
-    switch (mpv_pid) {
-        case -1:
-            error("Can't fork mpv process");
-            break;
-        case 0:
-            printf("Loading %s\n", url_watch);
-            if (execlp("mpv", "mpv", url_watch, NULL) == -1) {
-                error("Can't run mpv");
-            }
-            break;
-        default:
-            if (waitpid(mpv_pid, &mpv_exit_status, 0) == -1) {
-                error("Can't wait mpv process");
-            }
-
-            if (WEXITSTATUS(mpv_exit_status) == -1) {
-                fprintf(stderr, "mpv exit error, exit status: %i", 
-                        WEXITSTATUS(mpv_exit_status));
-            }
-            break;
+    if (execlp("mpv", "mpv", url_watch, NULL) == -1) {
+        error("Can't run mpv");
     }
     return 0;
 }
